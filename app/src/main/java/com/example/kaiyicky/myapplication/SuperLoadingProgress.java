@@ -18,14 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
-import android.view.animation.RotateAnimation;
-
-import com.example.kaiyicky.myapplication.R;
-
-import java.security.KeyStore;
-import java.security.PublicKey;
 
 /**
  * @author crazychen
@@ -41,6 +34,12 @@ public class SuperLoadingProgress extends View {
      * 最大进度
      */
     private static final int maxProgress = 100;
+
+    /**
+     * 画圈动画
+     */
+    private ValueAnimator mCircleAnimation = null;
+
     /**
      * 小方块抛出动画
      */
@@ -65,6 +64,9 @@ public class SuperLoadingProgress extends View {
      * 绘制感叹号震动
      */
     private ValueAnimator mCommaAnimation;
+
+    private ValueAnimator mCrossAnimation1;
+    private ValueAnimator mCrossAnimation2;
     private int mWidth,mHeight;
     private RectF mRectF = new RectF();
     private Paint circlePaint = new Paint();
@@ -102,6 +104,13 @@ public class SuperLoadingProgress extends View {
      */
     private PathMeasure commaPathMeasure1;
     private PathMeasure commaPathMeasure2;
+
+    /**
+     * 测量叉号
+     */
+    private PathMeasure crossPathMeasure1 = null;
+    private PathMeasure crossPathMeasure2 = null;
+
     /**
      * 下落百分比
      * @param context
@@ -122,6 +131,10 @@ public class SuperLoadingProgress extends View {
      * @param context
      */
     float commaPrecent = 0;
+
+    float crossPrecent1 = 0f;
+    float crossPrecent2 = 0f;
+
     /**
      * 震动百分比
      * @param context
@@ -139,6 +152,12 @@ public class SuperLoadingProgress extends View {
      * 扫过角度
      */
     private float curSweepAngle = 0;
+
+    /**
+     * 圆圈转动角度
+     */
+    private float currentRotate = 0.f;
+
     /**
      * 震动角度
      */
@@ -204,6 +223,18 @@ public class SuperLoadingProgress extends View {
         commaPath2.lineTo(2f * radius+strokeWidth, 2.5f * radius+strokeWidth);
         commaPathMeasure1 = new PathMeasure(commaPath1,false);
         commaPathMeasure2 = new PathMeasure(commaPath2,false);
+
+        // 叉号路径
+        Path crossPath1 = new Path();
+        Path crossPath2 = new Path();
+        float dLength = (float) (0.7f * Math.pow(0.5d, 0.5d)*Math.pow(radius, 2));
+        crossPath1.moveTo(2*radius - dLength +strokeWidth, 2*radius + dLength);
+        crossPath2.moveTo(2*radius + dLength +strokeWidth, 2*radius + dLength);
+        crossPath1.lineTo(2*radius + dLength +strokeWidth, 2*radius - dLength);
+        crossPath2.lineTo(2*radius - dLength +strokeWidth, 2*radius + dLength);
+        crossPathMeasure1 = new PathMeasure(crossPath1, false);
+        crossPathMeasure2 = new PathMeasure(crossPath2, false);
+
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
@@ -248,7 +279,27 @@ public class SuperLoadingProgress extends View {
         tickPaint.setAntiAlias(true);
         tickPaint.setStrokeWidth(strokeWidth);
         tickPaint.setStyle(Paint.Style.STROKE);
-        
+
+        mCircleAnimation = ValueAnimator.ofFloat(0f, 360f).setDuration(1000L);
+        mCircleAnimation.setInterpolator(new LinearInterpolator());
+        mCircleAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentRotate = (float) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        mCircleAnimation.setRepeatCount(ValueAnimator.INFINITE);
+        mCircleAnimation.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                if(progress > 100) {
+                    mCircleAnimation.cancel();
+                }
+            }
+        });
+
         //抛出动画
         endAngle = (float) Math.atan(4f/3);
         mRotateAnimation = ValueAnimator.ofFloat(0f, endAngle*0.9f );
@@ -319,7 +370,8 @@ public class SuperLoadingProgress extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                mTickAnimation.start();
+                //mTickAnimation.start();
+                mCrossAnimation1.start();
             }
         });
 
@@ -379,14 +431,60 @@ public class SuperLoadingProgress extends View {
             }
 
         });
+
+        mCrossAnimation1 = ValueAnimator.ofFloat(0f, 1f);
+        mCrossAnimation1.setDuration(1000);
+        mCrossAnimation1.setInterpolator(new AccelerateInterpolator());
+        mCrossAnimation1.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                status = 4;
+                crossPrecent1 = (float) animation.getAnimatedValue();
+                Log.e("TAG", crossPrecent1+"");
+                invalidate();
+            }
+        });
+
+        mCrossAnimation1.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                //status = 5;
+                mCrossAnimation2.start();
+            }
+        });
+
+        mCrossAnimation2 = ValueAnimator.ofFloat(0f, 1f);
+        mCrossAnimation2.setDuration(1000);
+        mCrossAnimation2.setInterpolator(new AccelerateInterpolator());
+        mCrossAnimation2.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                crossPrecent2 = (float) animation.getAnimatedValue();
+                Log.e("TAG", crossPrecent2+"");
+                invalidate();
+            }
+        });
+
+        mCrossAnimation2.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                status = 5;
+                //mCrossAnimation2.start();
+            }
+        });
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         switch (status){
             case 0:
-                float precent = 1.0f*progress/maxProgress;
-                canvas.drawArc(mRectF, startAngle-270*precent, -(60 + precent*300), false, circlePaint);
+                //float precent = 1.0f*progress/maxProgress;
+                //canvas.drawArc(mRectF, startAngle-270*precent, -(60 + precent*300), false, circlePaint);
+                drawCircle(canvas);
                 break;
             case 1:
                 drawSmallRectFly(canvas);
@@ -398,7 +496,8 @@ public class SuperLoadingProgress extends View {
                 drawFork(canvas);
                 break;
             case 4:
-                drawTick(canvas);
+                //drawTick(canvas);
+                drawCross(canvas);
                 break;
             case 5:
                 drawComma(canvas);
@@ -407,6 +506,17 @@ public class SuperLoadingProgress extends View {
                 drawShockComma(canvas);
                 break;
         }
+    }
+
+    /**
+     *
+     * @param canvas
+     */
+    private void drawCircle(Canvas canvas) {
+        float precent = 1.0f*progress/maxProgress;
+        float start = 0+currentRotate;
+        float end = 60f + 300*precent;
+        canvas.drawArc(mRectF, start, end, false, circlePaint);
     }
 
     /**
@@ -505,6 +615,16 @@ public class SuperLoadingProgress extends View {
         canvas.drawArc(mRectF, 0, 360, false, tickPaint);
     }
 
+    private void drawCross(Canvas canvas) {
+        Path path1 = new Path();
+        Path path2 = new Path();
+        crossPathMeasure1.getSegment(0, crossPrecent1*crossPathMeasure1.getLength(), path1, true);
+        crossPathMeasure2.getSegment(0, crossPrecent2*crossPathMeasure2.getLength(), path2, true);
+        canvas.drawPath(path1, tickPaint);
+        canvas.drawPath(path2, tickPaint);
+        canvas.drawArc(mRectF, 0, 360, false, tickPaint);
+    }
+
     /**
      * 绘制感叹号
      */
@@ -546,6 +666,8 @@ public class SuperLoadingProgress extends View {
             canvas.restore();
         }
     }
+
+
     
     /**
      * 绘制区域
@@ -559,6 +681,13 @@ public class SuperLoadingProgress extends View {
         while (iter.next(r)) {
             canvas.drawRect(r, paint);
         }
+    }
+
+    public void startLoading() {
+        progress = 0;
+        status = 0;
+        mCircleAnimation.start();
+        invalidate();
     }
 
     /**
