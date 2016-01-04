@@ -80,6 +80,28 @@ public class MainActivity extends FragmentActivity {
                                 Thread.sleep(50);
                                 mSuperLoadingProgress.setProgress(mSuperLoadingProgress.getProgress() + 1);
                             }
+                            mSuperLoadingProgress.finishFail();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }.start();
+            }
+        });
+
+        Button btn2 = (Button) findViewById(R.id.btn2);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(){
+                    @Override
+                    public void run() {
+                        try {
+                            mSuperLoadingProgress.setProgress(0);
+                            while(mSuperLoadingProgress.getProgress()<100) {
+                                Thread.sleep(50);
+                                mSuperLoadingProgress.setProgress(mSuperLoadingProgress.getProgress() + 1);
+                            }
                             mSuperLoadingProgress.finishSuccess();
                         } catch (InterruptedException e) {
                             e.printStackTrace();

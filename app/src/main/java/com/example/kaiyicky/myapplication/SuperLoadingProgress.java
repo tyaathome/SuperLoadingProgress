@@ -77,7 +77,7 @@ public class SuperLoadingProgress extends View {
     /**
      * 画笔宽度
      */
-    private int strokeWidth = 20; 
+    private int strokeWidth = 20;
     /**
      * 
      */
@@ -227,11 +227,11 @@ public class SuperLoadingProgress extends View {
         // 叉号路径
         Path crossPath1 = new Path();
         Path crossPath2 = new Path();
-        float dLength = (float) (0.7f * Math.pow(0.5d, 0.5d)*Math.pow(radius, 2));
-        crossPath1.moveTo(2*radius - dLength +strokeWidth, 2*radius + dLength);
-        crossPath2.moveTo(2*radius + dLength +strokeWidth, 2*radius + dLength);
-        crossPath1.lineTo(2*radius + dLength +strokeWidth, 2*radius - dLength);
-        crossPath2.lineTo(2*radius - dLength +strokeWidth, 2*radius + dLength);
+        float dLength = (float) (0.7f * radius / Math.pow(2, 0.5));
+        crossPath1.moveTo(2*radius + dLength + strokeWidth, 2*radius - dLength + strokeWidth);
+        crossPath2.moveTo(2*radius - dLength + strokeWidth, 2*radius - dLength + strokeWidth);
+        crossPath1.lineTo(2*radius - dLength + strokeWidth, 2*radius + dLength + strokeWidth);
+        crossPath2.lineTo(2*radius + dLength + strokeWidth, 2*radius + dLength + strokeWidth);
         crossPathMeasure1 = new PathMeasure(crossPath1, false);
         crossPathMeasure2 = new PathMeasure(crossPath2, false);
 
@@ -323,7 +323,8 @@ public class SuperLoadingProgress extends View {
                     mDownAnimation.start();
                 } else {
                     status = 5;
-                    mCommaAnimation.start();
+                    //mCommaAnimation.start();
+                    mCrossAnimation1.start();
                 }
             }
         });
@@ -370,8 +371,7 @@ public class SuperLoadingProgress extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                //mTickAnimation.start();
-                mCrossAnimation1.start();
+                mTickAnimation.start();
             }
         });
 
@@ -433,16 +433,25 @@ public class SuperLoadingProgress extends View {
         });
 
         mCrossAnimation1 = ValueAnimator.ofFloat(0f, 1f);
-        mCrossAnimation1.setDuration(1000);
+        mCrossAnimation1.setDuration(500);
         mCrossAnimation1.setInterpolator(new AccelerateInterpolator());
         mCrossAnimation1.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                status = 4;
+                //status = 5;
                 crossPrecent1 = (float) animation.getAnimatedValue();
-                Log.e("TAG", crossPrecent1+"");
+                Log.e("TAG", "1. " + crossPrecent1);
                 invalidate();
+            }
+        });
+
+        mCrossAnimation1.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                crossPrecent1 = 0f;
+                crossPrecent2 = 0f;
             }
         });
 
@@ -456,24 +465,15 @@ public class SuperLoadingProgress extends View {
         });
 
         mCrossAnimation2 = ValueAnimator.ofFloat(0f, 1f);
-        mCrossAnimation2.setDuration(1000);
+        mCrossAnimation2.setDuration(500);
         mCrossAnimation2.setInterpolator(new AccelerateInterpolator());
         mCrossAnimation2.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 crossPrecent2 = (float) animation.getAnimatedValue();
-                Log.e("TAG", crossPrecent2+"");
+                Log.e("TAG", "2. " + crossPrecent2);
                 invalidate();
-            }
-        });
-
-        mCrossAnimation2.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                status = 5;
-                //mCrossAnimation2.start();
             }
         });
     }
@@ -496,11 +496,11 @@ public class SuperLoadingProgress extends View {
                 drawFork(canvas);
                 break;
             case 4:
-                //drawTick(canvas);
-                drawCross(canvas);
+                drawTick(canvas);
                 break;
             case 5:
-                drawComma(canvas);
+                //drawComma(canvas);
+                drawCross(canvas);
                 break;
             case 6:
                 drawShockComma(canvas);
@@ -619,10 +619,12 @@ public class SuperLoadingProgress extends View {
         Path path1 = new Path();
         Path path2 = new Path();
         crossPathMeasure1.getSegment(0, crossPrecent1*crossPathMeasure1.getLength(), path1, true);
+        path1.rLineTo(0, 0);
         crossPathMeasure2.getSegment(0, crossPrecent2*crossPathMeasure2.getLength(), path2, true);
-        canvas.drawPath(path1, tickPaint);
-        canvas.drawPath(path2, tickPaint);
-        canvas.drawArc(mRectF, 0, 360, false, tickPaint);
+        path2.rLineTo(0, 0);
+        canvas.drawPath(path1, commaPaint);
+        canvas.drawPath(path2, commaPaint);
+        canvas.drawArc(mRectF, 0, 360, false, commaPaint);
     }
 
     /**
